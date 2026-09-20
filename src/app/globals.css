@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-primary: #f8f5f0;
+  --color-secondary: #ffffff;
+  --color-text-main: #2c2a29;
+  --color-text-muted: #6b6661;
+  --color-accent: #cda372;
+  --color-accent-hover: #b58d5f;
+  --color-border-subtle: #e5dfd5;
+
+  /* Typography */
+  --font-heading: var(--font-playfair);
+  --font-body: var(--font-inter);
+  --font-sans: var(--font-inter);
+
+  /* Overrides for background/foreground used by standard Next.js templates */
+  --color-background: var(--color-primary);
+  --color-foreground: var(--color-text-main);
+}
+
+/* Base resets & styles matching old_prototype */
+@layer base {
+  body {
+    background-color: var(--color-primary);
+    color: var(--color-text-main);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+  }
+}
+
+/* Ported Custom Animations */
+@layer utilities {
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.8s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease forwards;
+  }
+
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+}
