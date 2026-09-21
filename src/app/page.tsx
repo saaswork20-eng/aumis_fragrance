@@ -5,28 +5,23 @@ import { getActiveProducts } from "@/services/product.service";
 import { getActiveAdsByPlacement } from "@/services/ad.service";
 import { AdBanner } from "@/components/storefront/AdBanner";
 
-// Enable static regeneration every hour to keep database hits low 
-// but storefront reasonably fresh
-export const revalidate = 3600; 
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  let products: any[] = [];
-  let homepageAds: any[] = [];
-
-  try {
-    [products, homepageAds] = await Promise.all([
-      getActiveProducts(),
-      getActiveAdsByPlacement("HOMEPAGE_BANNER")
-    ]);
-  } catch (error) {
-    console.warn("Database not connected yet, showing empty state.");
-  }
+  const [products, homepageAds] = await Promise.all([
+    getActiveProducts(),
+    getActiveAdsByPlacement("HOMEPAGE_BANNER"),
+  ]);
 
   return (
     <>
       <Hero />
       <AdBanner ads={homepageAds} layout="hero" />
-      <ProductGrid products={products} />
+      <ProductGrid
+        products={products}
+        title="Our Signature Scents"
+        subtitle="Meticulously distilled pure attars and luxury perfumes made with rare natural extracts."
+      />
       <Features />
     </>
   );

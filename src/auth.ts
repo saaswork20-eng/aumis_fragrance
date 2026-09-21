@@ -1,4 +1,5 @@
-import NextAuth, { type DefaultSession } from "next-auth";
+import NextAuth from "next-auth";
+import { authConfig } from "./auth.config";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
@@ -10,21 +11,11 @@ const credentialsSchema = z.object({
   password: z.string().min(6),
 });
 
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string;
-      role: "SUPER_ADMIN" | "ADMIN" | "STAFF" | "CUSTOMER";
-    } & DefaultSession["user"];
-  }
-  interface User {
-    role: "SUPER_ADMIN" | "ADMIN" | "STAFF" | "CUSTOMER";
-  }
-}
-
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma) as any,
+  ...authConfig,
+  adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -34,7 +25,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials) {
         const validatedFields = credentialsSchema.safeParse(credentials);
-        
+
         if (!validatedFields.success) {
           return null;
         }
@@ -47,7 +38,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
-        
+
         if (passwordsMatch) {
           return {
             id: user.id,
@@ -61,25 +52,4 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = user.role;
-        token.id = user.id;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (token.sub && session.user) {
-        session.user.id = token.sub;
-      }
-      if (token.role && session.user) {
-        session.user.role = token.role as "SUPER_ADMIN" | "ADMIN" | "STAFF" | "CUSTOMER";
-      }
-      return session;
-    },
-  },
-  pages: {
-    signIn: "/auth/login",
-  },
 });

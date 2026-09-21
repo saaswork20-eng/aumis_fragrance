@@ -3,6 +3,8 @@ import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { SessionProvider } from "@/components/providers/SessionProvider";
+import { CartProvider } from "@/components/cart/CartContext";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -19,13 +21,13 @@ export const metadata: Metadata = {
   description: "AUMIS Fragrance - Premium Attar and Perfumes. Discover our exclusive collection of high-quality, long-lasting fragrances. Experience the essence of luxury.",
   keywords: ["Perfume", "Attar", "Fragrance", "Premium Scents", "AUMIS", "Luxury Perfumes", "Oud", "Best Attar", "Long lasting perfumes"],
   authors: [{ name: "AUMIS Fragrance" }],
-  metadataBase: new URL("https://www.aumisfragrance.com/"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://www.aumisfragrance.com/"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
     type: "website",
-    url: "https://www.aumisfragrance.com/",
+    url: process.env.NEXT_PUBLIC_APP_URL || "https://www.aumisfragrance.com/",
     title: "AUMIS Fragrance | Premium Attar & Perfumes",
     description: "Discover our exclusive collection of high-quality, long-lasting fragrances.",
     images: [
@@ -56,9 +58,13 @@ export default function RootLayout({
       className={`${inter.variable} ${playfair.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-body">
-        <Header />
-        <main className="flex-grow">{children}</main>
-        <Footer />
+        <SessionProvider>
+          <CartProvider>
+            <Header />
+            <main className="flex-grow">{children}</main>
+            <Footer />
+          </CartProvider>
+        </SessionProvider>
       </body>
     </html>
   );

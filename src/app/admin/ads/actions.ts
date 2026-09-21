@@ -9,8 +9,8 @@ import { redirect } from "next/navigation";
 export async function createAdAction(formData: FormData) {
   // 1. Authorization Check
   const session = await auth();
-  if (!session || !session.user || session.user.role === "CUSTOMER") {
-    throw new Error("Unauthorized");
+  if (!session || !session.user || session.user.role !== "ADMIN") {
+    throw new Error("Unauthorized: Admin access required.");
   }
 
   // 2. Extract Data
@@ -47,9 +47,8 @@ export async function createAdAction(formData: FormData) {
         entity: "Advertisement",
         entityId: ad.id,
         details: JSON.stringify({ title: ad.title }),
-      }
+      },
     });
-
   } catch (error) {
     console.error("Failed to create ad:", error);
     throw new Error("Database error. Failed to create advertisement.");
