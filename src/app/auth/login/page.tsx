@@ -9,7 +9,21 @@ import { Lock, Mail, AlertCircle, ArrowRight } from "lucide-react";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const rawCallbackUrl = searchParams.get("callbackUrl") || "/";
+  let callbackUrl = "/";
+  if (rawCallbackUrl.startsWith("/")) {
+    callbackUrl = rawCallbackUrl;
+  } else {
+    try {
+      const parsed = new URL(rawCallbackUrl);
+      callbackUrl = `${parsed.pathname}${parsed.search}`;
+    } catch {
+      callbackUrl = "/";
+    }
+  }
+  if (!callbackUrl.startsWith("/")) {
+    callbackUrl = "/";
+  }
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

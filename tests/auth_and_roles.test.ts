@@ -148,5 +148,52 @@ describe("Authentication & Role-Based Authorization", () => {
       orderPlacedByBuyerA.userId === adminUser.id || adminUser.role === "ADMIN";
     assert.equal(canAdminAccess, true, "Admin must be permitted to view order for fulfillment");
   });
+
+  it("consistently redirects to canonical application domain and prevents Vercel deployment URL leaks", async () => {
+    const redirectCb = authConfig.callbacks?.redirect;
+    assert.ok(redirectCb, "redirect callback must be defined in auth.config");
+
+    const originalNextAuthUrl = process.env.NEXTAUTH_URL;
+    process.env.NEXTAUTH_URL = "https://aumis-fragrance.vercel.app";
+
+    try {
+      // Test relative URL redirect
+      const relativeRedirect = await redirectCb({
+        url: "/admin",
+        baseUrl: "https://aumis-fragrance-60lgxfv52-saaswork20-engs-projects.vercel.app",
+      });
+      assert.equal(
+        relativeRedirect,
+        "https://aumis-fragrance.vercel.app/admin",
+        "Relative URL must resolve to canonical domain, not the deployment URL"
+      );
+
+      // Test rewriting deployment-specific *.vercel.app URL to canonical origin
+      const deploymentUrlRedirect = await redirectCb({
+        url: "https://aumis-fragrance-60lgxfv52-saaswork20-engs-projects.vercel.app/seller/products",
+        baseUrl: "https://aumis-fragrance-60lgxfv52-saaswork20-engs-projects.vercel.app",
+      });
+      assert.equal(
+        deploymentUrlRedirect,
+        "https://aumis-fragrance.vercel.app/seller/products",
+        "Deployment URL must be rewritten to canonical origin"
+      );
+
+      // Test local development behavior
+      process.env.NEXTAUTH_URL = "http://localhost:3000";
+      const localRedirect = await redirectCb({
+        url: "/account/orders",
+        baseUrl: "http://localhost:3000",
+      });
+      assert.equal(
+        localRedirect,
+        "http://localhost:3000/account/orders",
+        "Local dev must resolve to http://localhost:3000"
+      );
+    } finally {
+      process.env.NEXTAUTH_URL = originalNextAuthUrl;
+    }
+  });
 });
+
 

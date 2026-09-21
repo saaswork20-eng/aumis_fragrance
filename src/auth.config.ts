@@ -13,11 +13,50 @@ declare module "next-auth" {
   }
 }
 
+// Ensure AUTH_URL is defined from NEXTAUTH_URL or NEXT_PUBLIC_APP_URL for Auth.js v5
+if (!process.env.AUTH_URL) {
+  const envUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL;
+  if (envUrl) {
+    process.env.AUTH_URL = envUrl;
+  }
+}
+
 export const authConfig: NextAuthConfig = {
+  trustHost: true,
   pages: {
     signIn: "/auth/login",
   },
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      const canonicalBase =
+        process.env.AUTH_URL ||
+        process.env.NEXTAUTH_URL ||
+        process.env.NEXT_PUBLIC_APP_URL ||
+        baseUrl;
+
+      const canonicalOrigin = new URL(canonicalBase).origin;
+
+      // 1. Relative paths (e.g. "/admin" or "/") -> resolve onto canonicalOrigin
+      if (url.startsWith("/")) {
+        return `${canonicalOrigin}${url}`;
+      }
+
+      // 2. Absolute URL matching canonicalOrigin -> allow
+      try {
+        const parsed = new URL(url);
+        if (parsed.origin === canonicalOrigin) {
+          return url;
+        }
+        // 3. If url points to any *.vercel.app deployment-specific URL, rewrite to canonicalOrigin
+        if (parsed.hostname.endsWith(".vercel.app")) {
+          return `${canonicalOrigin}${parsed.pathname}${parsed.search}`;
+        }
+      } catch {
+        // invalid URL format -> fallback
+      }
+
+      return canonicalOrigin;
+    },
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const role = auth?.user?.role;
