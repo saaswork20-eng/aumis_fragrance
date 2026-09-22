@@ -59,3 +59,87 @@ export async function createAdAction(formData: FormData) {
   revalidatePath("/admin/ads");
   redirect("/admin/ads");
 }
+
+export async function updateAdAction(adId: string, formData: FormData) {
+  // 1. Authorization Check
+  const session = await auth();
+  if (!session || !session.user || session.user.role !== "ADMIN") {
+    throw new Error("Unauthorized: Admin access required.");
+  }
+
+  // 2. Extract Data
+  const data = {
+    advertiserId: formData.get("advertiserId") as string,
+    title: formData.get("title") as string,
+    description: formData.get("description") as string,
+    imageUrl: formData.get("imageUrl") as string,
+    destinationUrl: formData.get("destinationUrl") as string,
+    ctaText: formData.get("ctaText") as string,
+    placement: formData.get("placement") as "HOMEPAGE_BANNER" | "PRODUCT_GRID_INLINE" | "PROMO_MODAL",
+    status: formData.get("status") as "DRAFT" | "SCHEDULED" | "ACTIVE" | "PAUSED" | "EXPIRED",
+    startDate: formData.get("startDate") as string,
+    endDate: formData.get("endDate") as string,
+  };
+
+  // 3. Validate
+  const validated = advertisementSchema.safeParse(data);
+  if (!validated.success) {
+    throw new Error("Validation failed: " + JSON.stringify(validated.error.flatten().fieldErrors));
+  }
+
+  // 4. Database Mutation
+  try {
+    const ad = await prisma.advertisement.update({
+      where: { id: adId },
+      data: validated.data,
+    });
+
+    // 5. Audit Logging
+    await prisma.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: "UPDATE_AD",
+        entity: "Advertisement",
+        entityId: ad.id,
+        details: JSON.stringify({ title: ad.title }),
+      },
+    });
+  } catch (error) {
+    console.error("Failed to update ad:", error);
+    throw new Error("Database error. Failed to update advertisement.");
+  }
+
+  // 6. Revalidate Cache and Redirect
+  revalidatePath("/");
+  revalidatePath("/admin/ads");
+  redirect("/admin/ads");
+}
+
+export async function deleteAdAction(adId: string) {
+  const session = await auth();
+  if (!session || !session.user || session.user.role !== "ADMIN") {
+    throw new Error("Unauthorized: Admin access required.");
+  }
+
+  try {
+    const ad = await prisma.advertisement.delete({
+      where: { id: adId },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: "DELETE_AD",
+        entity: "Advertisement",
+        entityId: adId,
+        details: JSON.stringify({ title: ad.title }),
+      },
+    });
+  } catch (error) {
+    console.error("Failed to delete ad:", error);
+    throw new Error("Database error. Failed to delete advertisement.");
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin/ads");
+}
