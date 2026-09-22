@@ -35,3 +35,42 @@ export async function adminDeleteProductAction(productId: string) {
   revalidatePath("/shop");
   revalidatePath("/");
 }
+
+export async function adminToggleBestSellerAction(productId: string) {
+  const session = await auth();
+  if (!session?.user?.id || session.user.role !== "ADMIN") {
+    throw new Error("Unauthorized: Admin access required.");
+  }
+
+  const product = await prisma.product.findUnique({ where: { id: productId } });
+  if (!product) throw new Error("Product not found");
+
+  await prisma.product.update({
+    where: { id: productId },
+    data: { isBestSeller: !product.isBestSeller },
+  });
+
+  revalidatePath("/admin/products");
+  revalidatePath("/shop");
+  revalidatePath("/");
+}
+
+export async function adminToggleNewLaunchAction(productId: string) {
+  const session = await auth();
+  if (!session?.user?.id || session.user.role !== "ADMIN") {
+    throw new Error("Unauthorized: Admin access required.");
+  }
+
+  const product = await prisma.product.findUnique({ where: { id: productId } });
+  if (!product) throw new Error("Product not found");
+
+  await prisma.product.update({
+    where: { id: productId },
+    data: { isNewLaunch: !product.isNewLaunch },
+  });
+
+  revalidatePath("/admin/products");
+  revalidatePath("/shop");
+  revalidatePath("/");
+}
+

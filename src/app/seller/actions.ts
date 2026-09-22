@@ -191,3 +191,27 @@ export async function toggleSellerProductStatusAction(productId: string) {
   revalidatePath("/shop");
   revalidatePath("/seller/products");
 }
+
+export async function toggleSellerProductNewLaunchAction(productId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+  });
+
+  // Strict IDOR ownership check
+  if (!product || (product.sellerId !== session.user.id && session.user.role !== "ADMIN")) {
+    throw new Error("Forbidden: You can only modify your own products.");
+  }
+
+  await prisma.product.update({
+    where: { id: productId },
+    data: { isNewLaunch: !product.isNewLaunch },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/shop");
+  revalidatePath("/seller/products");
+}
+

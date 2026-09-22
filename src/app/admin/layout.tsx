@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { Shield, Package, Users, ShoppingCart, Megaphone, ArrowLeft } from "lucide-react";
+import { Shield, Package, Users, ShoppingCart, Megaphone, ArrowLeft, Layers, Sliders, Tag } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +52,24 @@ export default async function AdminLayout({
             Products
           </Link>
           <Link
+            href="/admin/categories"
+            className="whitespace-nowrap rounded-lg bg-primary px-3 py-1.5 text-text-main hover:bg-accent hover:text-white transition"
+          >
+            Categories
+          </Link>
+          <Link
+            href="/admin/carousel"
+            className="whitespace-nowrap rounded-lg bg-primary px-3 py-1.5 text-text-main hover:bg-accent hover:text-white transition"
+          >
+            Carousel
+          </Link>
+          <Link
+            href="/admin/offers"
+            className="whitespace-nowrap rounded-lg bg-primary px-3 py-1.5 text-text-main hover:bg-accent hover:text-white transition"
+          >
+            Offers
+          </Link>
+          <Link
             href="/admin/orders"
             className="whitespace-nowrap rounded-lg bg-primary px-3 py-1.5 text-text-main hover:bg-accent hover:text-white transition"
           >
@@ -98,6 +116,27 @@ export default async function AdminLayout({
           >
             <Package className="h-4 w-4 text-accent" />
             All Products
+          </Link>
+          <Link
+            href="/admin/categories"
+            className="flex items-center gap-2.5 rounded-lg px-4 py-2.5 text-xs font-semibold text-text-main transition hover:bg-primary"
+          >
+            <Layers className="h-4 w-4 text-accent" />
+            Categories
+          </Link>
+          <Link
+            href="/admin/carousel"
+            className="flex items-center gap-2.5 rounded-lg px-4 py-2.5 text-xs font-semibold text-text-main transition hover:bg-primary"
+          >
+            <Sliders className="h-4 w-4 text-accent" />
+            Carousel Banners
+          </Link>
+          <Link
+            href="/admin/offers"
+            className="flex items-center gap-2.5 rounded-lg px-4 py-2.5 text-xs font-semibold text-text-main transition hover:bg-primary"
+          >
+            <Tag className="h-4 w-4 text-accent" />
+            Offers & Discounts
           </Link>
           <Link
             href="/admin/orders"

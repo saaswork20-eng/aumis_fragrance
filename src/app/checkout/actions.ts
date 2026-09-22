@@ -3,7 +3,8 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { z } from "zod";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { isOfferActive, computeDiscountedPrice } from "@/services/product.service";
 
 const checkoutSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -60,7 +61,11 @@ export async function createOrderAction(rawInput: CheckoutInput): Promise<OrderR
       const variants = await tx.productVariant.findMany({
         where: { id: { in: variantIds } },
         include: {
-          product: true,
+          product: {
+            include: {
+              offer: true,
+            },
+          },
           inventory: true,
         },
       });
@@ -96,15 +101,18 @@ export async function createOrderAction(rawInput: CheckoutInput): Promise<OrderR
           );
         }
 
-        const unitPrice = Number(variant.price);
-        const itemTotal = unitPrice * item.quantity;
+        const rawUnitPrice = Number(variant.price);
+        const hasActiveOffer = isOfferActive(variant.product.offer);
+        const discountPercentage = hasActiveOffer && variant.product.offer ? variant.product.offer.discountPercentage : 0;
+        const unitPrice = hasActiveOffer ? computeDiscountedPrice(rawUnitPrice, discountPercentage) : rawUnitPrice;
+        const itemTotal = Math.round(unitPrice * item.quantity * 100) / 100;
         subtotal += itemTotal;
 
         orderItemsToCreate.push({
           variantId: variant.id,
           sellerId: variant.product.sellerId,
           quantity: item.quantity,
-          unitPrice: variant.price,
+          unitPrice: new Prisma.Decimal(unitPrice),
           totalPrice: itemTotal,
         });
 

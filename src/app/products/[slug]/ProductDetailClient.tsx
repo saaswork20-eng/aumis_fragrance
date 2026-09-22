@@ -11,6 +11,7 @@ type Variant = {
   sku: string;
   name: string;
   price: number;
+  originalPrice?: number;
   stock: number;
 };
 
@@ -27,6 +28,10 @@ type ProductData = {
   slug: string;
   description: string;
   basePrice: number;
+  isNewLaunch?: boolean;
+  isBestSeller?: boolean;
+  hasDiscount?: boolean;
+  discountPercentage?: number;
   category: {
     name: string;
     slug: string;
@@ -112,8 +117,27 @@ export function ProductDetailClient({ product }: { product: ProductData }) {
               className="object-cover transition-all duration-500"
               sizes="(max-width: 1024px) 100vw, 50vw"
             />
+            {/* Badges Stack */}
+            <div className="absolute left-4 top-4 flex flex-col items-start gap-1.5 z-10">
+              {product.isBestSeller && (
+                <span className="rounded-md bg-amber-600/90 backdrop-blur-md px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-sm">
+                  Best Seller
+                </span>
+              )}
+              {product.isNewLaunch && (
+                <span className="rounded-md bg-emerald-700/90 backdrop-blur-md px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-sm">
+                  New Launch
+                </span>
+              )}
+              {product.hasDiscount && (product.discountPercentage ?? 0) > 0 && (
+                <span className="rounded-md bg-rose-600/95 backdrop-blur-md px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-sm animate-pulse">
+                  {product.discountPercentage}% OFF
+                </span>
+              )}
+            </div>
+
             {!isAvailable && (
-              <div className="absolute left-4 top-4 rounded-md bg-black/80 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+              <div className="absolute right-4 top-4 rounded-md bg-black/80 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm z-10">
                 Sold Out
               </div>
             )}
@@ -153,10 +177,20 @@ export function ProductDetailClient({ product }: { product: ProductData }) {
               <h1 className="font-heading text-3xl font-bold text-text-main md:text-4xl">
                 {product.name}
               </h1>
-              <div className="mt-4 flex items-baseline gap-3">
-                <span className="font-heading text-3xl font-bold text-text-main">
+              <div className="mt-4 flex flex-wrap items-baseline gap-3">
+                {product.hasDiscount && selectedVariant.originalPrice && selectedVariant.originalPrice > selectedVariant.price && (
+                  <span className="font-heading text-xl font-medium text-text-muted line-through">
+                    ${selectedVariant.originalPrice.toFixed(2)}
+                  </span>
+                )}
+                <span className={`font-heading text-3xl font-bold ${product.hasDiscount ? "text-rose-700" : "text-text-main"}`}>
                   ${selectedVariant.price.toFixed(2)}
                 </span>
+                {product.hasDiscount && (
+                  <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-bold text-rose-700">
+                    Save {product.discountPercentage}%
+                  </span>
+                )}
                 <span className="text-xs text-text-muted">Taxes included. Free luxury packaging.</span>
               </div>
             </div>
@@ -197,9 +231,16 @@ export function ProductDetailClient({ product }: { product: ProductData }) {
                       }`}
                     >
                       <span className="text-xs font-bold text-text-main">{variant.name}</span>
-                      <span className="mt-1 text-xs font-semibold text-accent">
-                        ${variant.price.toFixed(2)}
-                      </span>
+                      <div className="mt-1 flex items-baseline justify-center gap-1.5">
+                        {variant.originalPrice && variant.originalPrice > variant.price && (
+                          <span className="text-[10px] text-text-muted line-through">
+                            ${variant.originalPrice.toFixed(2)}
+                          </span>
+                        )}
+                        <span className={`text-xs font-semibold ${variant.originalPrice && variant.originalPrice > variant.price ? "text-rose-700" : "text-accent"}`}>
+                          ${variant.price.toFixed(2)}
+                        </span>
+                      </div>
                     </button>
                   ))}
                 </div>

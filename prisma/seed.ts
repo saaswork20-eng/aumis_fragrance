@@ -233,6 +233,100 @@ async function main() {
   }
 
   console.log("✓ Products and variants initialized with seller ownership");
+
+  // 7. Seed Merchandising Flags (New Launch & Best Seller)
+  const royalOud = await prisma.product.findUnique({ where: { slug: "royal-oud" } });
+  const midnightMusk = await prisma.product.findUnique({ where: { slug: "midnight-musk" } });
+  const jasmineBloom = await prisma.product.findUnique({ where: { slug: "jasmine-bloom" } });
+  const amberSovereign = await prisma.product.findUnique({ where: { slug: "amber-sovereign" } });
+
+  if (royalOud) {
+    await prisma.product.update({
+      where: { id: royalOud.id },
+      data: { isBestSeller: true },
+    });
+  }
+
+  if (midnightMusk) {
+    await prisma.product.update({
+      where: { id: midnightMusk.id },
+      data: { isNewLaunch: true },
+    });
+  }
+
+  if (amberSovereign) {
+    await prisma.product.update({
+      where: { id: amberSovereign.id },
+      data: { isNewLaunch: true, isBestSeller: true },
+    });
+  }
+  console.log("✓ Merchandising flags (New Launch & Best Seller) updated");
+
+  // 8. Seed Product Offers
+  if (royalOud) {
+    await prisma.productOffer.upsert({
+      where: { productId: royalOud.id },
+      update: { discountPercentage: 15, isActive: true },
+      create: {
+        productId: royalOud.id,
+        discountPercentage: 15,
+        isActive: true,
+      },
+    });
+  }
+
+  if (jasmineBloom) {
+    await prisma.productOffer.upsert({
+      where: { productId: jasmineBloom.id },
+      update: { discountPercentage: 20, isActive: true },
+      create: {
+        productId: jasmineBloom.id,
+        discountPercentage: 20,
+        isActive: true,
+      },
+    });
+  }
+  console.log("✓ Product offers initialized");
+
+  // 9. Seed Carousel Slides (At least 3 slides)
+  const existingSlides = await prisma.carouselSlide.count();
+  if (existingSlides === 0) {
+    await prisma.carouselSlide.createMany({
+      data: [
+        {
+          title: "Discover Our New Collection",
+          description: "Luxury artisanal fragrances distilled from rare pure extracts and aged Cambodian oud.",
+          imageUrl: "https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=1600&auto=format&fit=crop",
+          ctaText: "Explore Collection",
+          categoryId: categoryOud.id,
+          discountText: null,
+          displayOrder: 1,
+          isActive: true,
+        },
+        {
+          title: "Royal Oud — Masterpiece Formulation",
+          description: "An imperial blend of pure aged oud, sandalwood, and Taif rose. Special introductory offer.",
+          imageUrl: "https://images.unsplash.com/photo-1547887537-6158d64c35b3?q=80&w=1600&auto=format&fit=crop",
+          ctaText: "Claim 15% OFF",
+          productId: royalOud?.id,
+          discountText: "15% OFF",
+          displayOrder: 2,
+          isActive: true,
+        },
+        {
+          title: "Artisanal Jasmine Bloom",
+          description: "Fresh, ethereal dawn petals touched with sparkling bergamot and gentle golden amber.",
+          imageUrl: "https://images.unsplash.com/photo-1595535373192-fc8938bab37c?q=80&w=1600&auto=format&fit=crop",
+          ctaText: "Shop Scent",
+          productId: jasmineBloom?.id,
+          discountText: "20% OFF",
+          displayOrder: 3,
+          isActive: true,
+        },
+      ],
+    });
+  }
+  console.log("✓ Carousel slides initialized");
   console.log("Seed finished successfully.");
 }
 

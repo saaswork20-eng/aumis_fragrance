@@ -3,8 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { toggleSellerProductStatusAction, deleteSellerProductAction } from "../actions";
-import { PlusCircle, Edit, Trash2, Power } from "lucide-react";
+import {
+  toggleSellerProductStatusAction,
+  deleteSellerProductAction,
+  toggleSellerProductNewLaunchAction,
+} from "../actions";
+import { PlusCircle, Edit, Trash2, Power, Flame, Sparkles, Tag, ExternalLink } from "lucide-react";
+import { isOfferActive } from "@/services/product.service";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +30,7 @@ export default async function SellerProductsPage() {
       variants: {
         include: { inventory: true },
       },
+      offer: true,
     },
     orderBy: { createdAt: "desc" },
   });
@@ -37,6 +43,9 @@ export default async function SellerProductsPage() {
           <h1 className="mt-1 font-heading text-3xl font-bold text-text-main">
             My Fragrances ({products.length})
           </h1>
+          <p className="mt-1 text-xs text-text-muted">
+            Manage your listed artisanal creations, new launches, discounts, and inventory.
+          </p>
         </div>
 
         <Link
@@ -68,18 +77,20 @@ export default async function SellerProductsPage() {
                   <th className="px-6 py-4">Fragrance</th>
                   <th className="px-6 py-4">Category</th>
                   <th className="px-6 py-4">Base Price</th>
-                  <th className="px-6 py-4">Total Stock</th>
+                  <th className="px-6 py-4">Stock</th>
+                  <th className="px-6 py-4">Merchandising & Offers</th>
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border-subtle">
+              <tbody className="divide-y border-border-subtle">
                 {products.map((product) => {
                   const totalStock = product.variants.reduce(
                     (acc, v) => acc + (v.inventory?.availableQuantity ?? 0),
                     0
                   );
                   const imageUrl = product.images[0]?.url || "https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=400";
+                  const hasActiveOffer = isOfferActive(product.offer);
 
                   return (
                     <tr key={product.id} className="hover:bg-primary/30 transition">
@@ -89,12 +100,15 @@ export default async function SellerProductsPage() {
                             <Image src={imageUrl} alt={product.name} fill className="object-cover" />
                           </div>
                           <div>
-                            <Link
-                              href={`/products/${product.slug}`}
-                              className="font-bold text-text-main hover:text-accent transition"
-                            >
-                              {product.name}
-                            </Link>
+                            <div className="flex items-center gap-1.5">
+                              <Link
+                                href={`/products/${product.slug}`}
+                                className="font-bold text-text-main hover:text-accent transition"
+                              >
+                                {product.name}
+                              </Link>
+                              <ExternalLink className="h-3 w-3 text-text-muted" />
+                            </div>
                             <p className="text-[10px] text-text-muted">Slug: /{product.slug}</p>
                           </div>
                         </div>
@@ -106,6 +120,59 @@ export default async function SellerProductsPage() {
                           {totalStock} units
                         </span>
                       </td>
+
+                      {/* Merchandising & Offers Column */}
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col gap-1.5 items-start">
+                          {/* Best Seller Status (Read-only for seller, set by admin) */}
+                          {product.isBestSeller && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold">
+                              <Flame className="h-3 w-3" />
+                              Best Seller (Featured by Admin)
+                            </span>
+                          )}
+
+                          {/* New Launch Toggle (Seller can toggle for own products) */}
+                          <form action={toggleSellerProductNewLaunchAction.bind(null, product.id)}>
+                            <button
+                              type="submit"
+                              title={product.isNewLaunch ? "Unmark as New Launch" : "Mark as New Launch"}
+                              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold transition ${
+                                product.isNewLaunch
+                                  ? "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200"
+                                  : "bg-gray-100 text-gray-500 hover:bg-emerald-50 hover:text-emerald-700"
+                              }`}
+                            >
+                              <Sparkles className="h-3 w-3" />
+                              {product.isNewLaunch ? "NEW LAUNCH ✓" : "+ Mark New Launch"}
+                            </button>
+                          </form>
+
+                          {/* Active Offer Status / Link */}
+                          {hasActiveOffer && product.offer ? (
+                            <div className="flex items-center gap-1">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 text-rose-800 px-2 py-0.5 text-[10px] font-bold">
+                                <Tag className="h-3 w-3" />
+                                {product.offer.discountPercentage}% OFF
+                              </span>
+                              <Link
+                                href="/seller/offers"
+                                className="text-[10px] text-accent hover:underline font-medium"
+                              >
+                                Edit Offer
+                              </Link>
+                            </div>
+                          ) : (
+                            <Link
+                              href={`/seller/offers/create?productId=${product.id}`}
+                              className="text-[10px] font-semibold text-accent hover:underline"
+                            >
+                              + Add Offer
+                            </Link>
+                          )}
+                        </div>
+                      </td>
+
                       <td className="px-6 py-4">
                         <span
                           className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
@@ -117,6 +184,7 @@ export default async function SellerProductsPage() {
                           {product.isActive ? "ACTIVE" : "HIDDEN"}
                         </span>
                       </td>
+
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link
